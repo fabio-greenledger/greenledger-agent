@@ -1,17 +1,18 @@
 const Web3 = require('web3');
-const web3 = new Web3('ws://127.0.0.1:8545'); // URL do seu nó Ethereum
+const web3 = new Web3('ws://127.0.0.1:7545'); // URL do seu nó Ethereum
 
-const account = web3.eth.accounts.privateKeyToAccount('0xee7b91b0739bb3f87cfbfcc46bfd9cbf38dbb4a264726b8bdb750cb60691e5d3');
+const account = web3.eth.accounts.privateKeyToAccount('SUA_CHAVE_PRIVADA');
 web3.eth.accounts.wallet.add(account);
 
 const abi = require('./abi.json'); // ABI do contrato
-const contractAddress = '0xd098FBd995CEde79dB33374fAA9E1A6c2E46D757'; // Endereço do contrato
+const contractAddress = 'ENDERECO_DO_CONTRATO'; // Endereço do contrato
 
 const contract = new web3.eth.Contract(abi, contractAddress);
 
 let nonce = 0;
 let nonceInitialized = false;
 
+// Função para inicializar o nonce
 async function initializeNonce() {
   if (!nonceInitialized) {
     nonce = await web3.eth.getTransactionCount(account.address, 'latest');
@@ -19,6 +20,7 @@ async function initializeNonce() {
   }
 }
 
+// Função para enviar transações para o contrato
 async function sendTransaction(method, params) {
   try {
     await initializeNonce();
@@ -37,14 +39,17 @@ async function sendTransaction(method, params) {
   }
 }
 
+// Função para registrar um dispositivo IoT
 async function registerIoTDevice(deviceAddress) {
   await sendTransaction('registerIoTDevice', [deviceAddress]);
 }
 
+// Função para registrar um navio
 async function registerShip(id, distancePerTon, name, shipType, year, flag, size, imoNumber, iotDevice, fuelTankCapacity) {
   await sendTransaction('registerShip', [id, distancePerTon, name, shipType, year, flag, size, imoNumber, iotDevice, fuelTankCapacity]);
 }
 
+// Função para enviar dados de IoT
 async function sendIoTData(id) {
   try {
     const authorizedDevice = account.address;
@@ -66,6 +71,7 @@ async function sendIoTData(id) {
   }
 }
 
+// Função para finalizar os dados diários
 async function finalizeDailyData(id) {
   try {
     const authorizedDevice = account.address;
@@ -92,6 +98,7 @@ async function finalizeDailyData(id) {
   }
 }
 
+// Função para exibir o resumo das informações do navio
 async function displaySummary(id) {
   try {
     const totalKilometers = await contract.methods.getTotalKilometers(id).call();
@@ -123,6 +130,7 @@ async function displaySummary(id) {
   }
 }
 
+// Função principal para iniciar o processo
 async function main() {
   const shipId = 'ship123';
   const authorizedDevice = account.address;

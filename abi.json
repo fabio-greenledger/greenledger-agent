@@ -28,32 +28,6 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "DeviceAuthorized",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "DeviceRevoked",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
         "internalType": "string",
         "name": "id",
         "type": "string"
@@ -99,115 +73,12 @@
       {
         "indexed": false,
         "internalType": "uint256",
-        "name": "distancePerTon",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "name",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "shipType",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "year",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "flag",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "size",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "imoNumber",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "iotDevice",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "fuelTankCapacity",
+        "name": "fuelAmount",
         "type": "uint256"
       }
     ],
-    "name": "ShipRegistered",
+    "name": "ShipRefueled",
     "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "name": "dailyRecords",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "totalKilometers",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "totalFuelConsumed",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "numberOfEntries",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "devices",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "authorized",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
   },
   {
     "inputs": [],
@@ -385,39 +256,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "registerIoTDevice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "isDeviceAuthorized",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function",
-    "constant": true
-  },
-  {
-    "inputs": [
-      {
         "internalType": "string",
         "name": "id",
         "type": "string"
@@ -461,33 +299,7 @@
         "type": "string"
       }
     ],
-    "name": "recordEmissions",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "authorizeDevice",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "deviceAddress",
-        "type": "address"
-      }
-    ],
-    "name": "revokeDevice",
+    "name": "finalizeDailyRecord",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -511,19 +323,6 @@
     "stateMutability": "view",
     "type": "function",
     "constant": true
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "id",
-        "type": "string"
-      }
-    ],
-    "name": "finalizeDailyRecord",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   },
   {
     "inputs": [

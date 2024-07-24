@@ -1,18 +1,20 @@
+require('dotenv').config();
 const Web3 = require('web3');
-const web3 = new Web3('ws://127.0.0.1:7545'); // URL do seu nó Ethereum
+const { saveShipToDB, saveDeviceToDB, isDeviceAuthorized } = require('./db');
 
-const account = web3.eth.accounts.privateKeyToAccount('SUA_CHAVE_PRIVADA');
+const web3 = new Web3(process.env.WEB3_PROVIDER);
+
+const account = web3.eth.accounts.privateKeyToAccount(process.env.PRIVATE_KEY);
 web3.eth.accounts.wallet.add(account);
 
-const abi = require('./abi.json'); // ABI do contrato
-const contractAddress = 'ENDERECO_DO_CONTRATO'; // Endereço do contrato
+const abi = require('./abi.json');
+const contractAddress = process.env.CONTRACT_ADDRESS;
 
 const contract = new web3.eth.Contract(abi, contractAddress);
 
 let nonce = 0;
 let nonceInitialized = false;
 
-// Função para inicializar o nonce
 async function initializeNonce() {
   if (!nonceInitialized) {
     nonce = await web3.eth.getTransactionCount(account.address, 'latest');
@@ -20,40 +22,59 @@ async function initializeNonce() {
   }
 }
 
-// Função para enviar transações para o contrato
 async function sendTransaction(method, params) {
   try {
     await initializeNonce();
+    const txData = contract.methods[method](...params).encodeABI();
     const tx = {
       from: account.address,
       to: contractAddress,
-      data: contract.methods[method](...params).encodeABI(),
+      data: txData,
       gas: 3000000,
-      nonce: nonce++
+      nonce: nonce++,
     };
+    
+    console.log(`Enviando transação - Método: ${method}, Parâmetros: ${JSON.stringify(params)}`);
+    console.log(`Detalhes da transação: ${JSON.stringify(tx)}`);
+
     const signedTx = await web3.eth.accounts.signTransaction(tx, account.privateKey);
+    console.log(`Transação assinada: ${JSON.stringify(signedTx)}`);
+
     const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    console.log('Transaction receipt:', receipt);
+    console.log(`Receipt da transação para ${method}: ${JSON.stringify(receipt)}`);
   } catch (error) {
-    console.error('Erro ao enviar transação:', error);
+    console.error(`Erro ao enviar transação (${method}):`, error);
   }
 }
 
-// Função para registrar um dispositivo IoT
 async function registerIoTDevice(deviceAddress) {
-  await sendTransaction('registerIoTDevice', [deviceAddress]);
+  await saveDeviceToDB(deviceAddress, true);
+  console.log(`Dispositivo IoT ${deviceAddress} registrado e autorizado.`);
 }
 
-// Função para registrar um navio
 async function registerShip(id, distancePerTon, name, shipType, year, flag, size, imoNumber, iotDevice, fuelTankCapacity) {
-  await sendTransaction('registerShip', [id, distancePerTon, name, shipType, year, flag, size, imoNumber, iotDevice, fuelTankCapacity]);
+  const ship = {
+    id,
+    distancePerTon,
+    name,
+    shipType,
+    year,
+    flag,
+    size,
+    imoNumber,
+    iotDevice,
+    fuelTankCapacity,
+    fuelRemaining: fuelTankCapacity,
+  };
+
+  await saveShipToDB(ship);
+  console.log(`Navio ${id} registrado com sucesso.`);
 }
 
-// Função para enviar dados de IoT
 async function sendIoTData(id) {
   try {
     const authorizedDevice = account.address;
-    const authorized = await contract.methods.isDeviceAuthorized(authorizedDevice).call();
+    const authorized = await isDeviceAuthorized(authorizedDevice);
     if (!authorized) {
       console.log(`Dispositivo IoT ${authorizedDevice} não está autorizado. Não será possível enviar dados.`);
       return;
@@ -71,11 +92,10 @@ async function sendIoTData(id) {
   }
 }
 
-// Função para finalizar os dados diários
 async function finalizeDailyData(id) {
   try {
     const authorizedDevice = account.address;
-    const authorized = await contract.methods.isDeviceAuthorized(authorizedDevice).call();
+    const authorized = await isDeviceAuthorized(authorizedDevice);
     if (!authorized) {
       console.log(`Dispositivo IoT ${authorizedDevice} não está autorizado. Não será possível registrar dados.`);
       return;
@@ -84,21 +104,13 @@ async function finalizeDailyData(id) {
     await sendTransaction('finalizeDailyRecord', [id]);
     console.log(`Dados diários finalizados para o navio ${id}`);
 
-    const emissions = await contract.methods.calculateEmissions(id).call();
-    console.log(`Emissões de CO2 para ${id}: ${emissions} g`);
-
-    const credits = await contract.methods.calculateCredits(id).call();
-    console.log(`Créditos de carbono para ${id}: ${credits}`);
-
-    const fuelConsumption = await contract.methods.calculateFuelConsumptionPerKilometer(id).call();
-    console.log(`Consumo médio de combustível para ${id}: ${fuelConsumption} L/km`);
+    await displaySummary(id);
 
   } catch (error) {
     console.error(`Erro ao finalizar dados diários do navio ${id}:`, error);
   }
 }
 
-// Função para exibir o resumo das informações do navio
 async function displaySummary(id) {
   try {
     const totalKilometers = await contract.methods.getTotalKilometers(id).call();
@@ -130,7 +142,6 @@ async function displaySummary(id) {
   }
 }
 
-// Função principal para iniciar o processo
 async function main() {
   const shipId = 'ship123';
   const authorizedDevice = account.address;
@@ -138,7 +149,10 @@ async function main() {
   // Registrar e autorizar o dispositivo IoT
   await registerIoTDevice(authorizedDevice);
 
-  // Registrar o navio
+  // Registrar o navio no contrato inteligente
+  await sendTransaction('registerShip', [shipId, 100, 'Ever Given', 'cargo', 2018, 'Panama', 'large', 'IMO1234567', authorizedDevice, 100000]);
+
+  // Registrar o navio no banco de dados
   await registerShip(shipId, 100, 'Ever Given', 'cargo', 2018, 'Panama', 'large', 'IMO1234567', authorizedDevice, 100000);
 
   // Enviar dados a cada 10 segundos para navio
@@ -150,6 +164,12 @@ async function main() {
   setInterval(async () => {
     await finalizeDailyData(shipId);
   }, 24 * 60 * 60 * 1000); // 24 horas
+
+  // Monitorar eventos de reabastecimento
+  contract.events.ShipRefueled({}).on('data', async (event) => {
+    const { id, fuelAmount } = event.returnValues;
+    console.log(`Navio ${id} reabastecido com ${fuelAmount} litros.`);
+  });
 }
 
 main();
